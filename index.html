@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a3e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Lumio">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon.svg">
+<title>Lumio — AI Image Analyser</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Comfortaa:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f0f4ff;
+    --white: #ffffff;
+    --surface: #f8f9ff;
+    --blue: #4f8ef7;
+    --blue-light: #dce8ff;
+    --blue-dark: #2563eb;
+    --purple: #9b6ef3;
+    --purple-light: #ede4ff;
+    --green: #34c98a;
+    --green-light: #d4f5e9;
+    --orange: #ff8c42;
+    --orange-light: #ffe4cc;
+    --text: #1a1a2e;
+    --text-mid: #555577;
+    --text-soft: #9999bb;
+    --border: #e0e4f5;
+    --shadow: rgba(79, 142, 247, 0.12);
+    --red: #ef4444;
+    --red-light: #fff5f5;
+  }
+
+  html, body { height: 100%; background: var(--bg); font-family: 'Nunito', sans-serif; color: var(--text); overflow: hidden; }
+
+  body::before {
+    content: ''; position: fixed;
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(79,142,247,0.12) 0%, transparent 70%);
+    top: -100px; right: -80px; border-radius: 50%; pointer-events: none;
+  }
+
+  body::after {
+    content: ''; position: fixed;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(155,110,243,0.1) 0%, transparent 70%);
+    bottom: 0; left: -80px; border-radius: 50%; pointer-events: none;
+  }
+
+  /* ── Login Screen ── */
+  #login-screen {
+    position: fixed; inset: 0; z-index: 200;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+
+  .login-card {
+    background: var(--white);
+    border-radius: 28px;
+    padding: 36px 28px;
+    width: 100%; max-width: 360px;
+    border: 2px solid var(--border);
+    box-shadow: 0 20px 60px rgba(79,142,247,0.15);
+    text-align: center;
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.85) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .login-logo {
+    width: 72px; height: 72px; border-radius: 22px;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 34px; margin: 0 auto 20px;
+    box-shadow: 0 8px 24px rgba(79,142,247,0.35);
+    animation: pulse-logo 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-logo {
+    0%, 100% { box-shadow: 0 8px 24px rgba(79,142,247,0.35); }
+    50% { box-shadow: 0 8px 36px rgba(79,142,247,0.55); }
+  }
+
+  .login-title {
+    font-family: 'Comfortaa', sans-serif;
+    font-size: 26px; font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .login-sub {
+    font-size: 13px; color: var(--text-soft);
+    font-weight: 600; margin-bottom: 28px; line-height: 1.5;
+  }
+
+  .login-input-wrap {
+    position: relative; margin-bottom: 14px;
+  }
+
+  .login-input {
+    width: 100%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 44px 14px 16px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px; font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    text-align: center;
+    letter-spacing: 0.1em;
+  }
+
+  .login-input:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 4px rgba(79,142,247,0.1);
+  }
+
+  .login-input.error { border-color: var(--red); }
+
+  .toggle-pw {
+    position: absolute; right: 14px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    font-size: 18px; color: var(--text-soft);
+    padding: 4px;
+  }
+
+  .login-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+    border: none; border-radius: 14px;
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px; font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(79,142,247,0.35);
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(79,142,247,0.45); }
+  .login-btn:active { transform: scale(0.97); }
+  .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .login-error {
+    margin-top: 12px;
+    background: var(--red-light);
+    border: 2px solid #ffc0c0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px; font-weight: 700;
+    color: var(--red);
+    display: none;
+    animation: shake 0.3s ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  /* ── Offline Banner ── */
+  #offline-banner {
+    display: none;
+    background: #1a1a2e; color: #fff;
+    text-align: center; padding: 8px;
+    font-size: 12px; font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  /* ── Main App ── */
+  #app {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    height: 100vh; max-width: 480px; margin: 0 auto;
+  }
+
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px 14px;
+    background: var(--white);
+    border-bottom: 2px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    width: 42px; height: 42px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 14px rgba(79,142,247,0.3);
+    animation: pulse-logo 3s ease-in-out infinite;
+  }
+
+  .header-info h1 { font-family: 'Comfortaa', sans-serif; font-size: 18px; font-weight: 700; }
+  .header-sub { font-size: 11px; color: var(--blue); font-weight: 800; }
+
+  .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+  .mode-tabs {
+    display: flex; gap: 4px;
+    background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 3px;
+  }
+
+  .mode-tab {
+    padding: 4px 10px; border-radius: 16px;
+    font-size: 11px; font-weight: 800;
+    border: none; cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    color: var(--text-soft); background: none;
+    transition: all 0.2s;
+  }
+
+  .mode-tab.active {
+    background: var(--white); color: var(--blue-dark);
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .logout-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1.5px solid var(--border); background: var(--bg);
+    color: var(--text-soft); cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .logout-btn:hover { background: var(--red-light); border-color: var(--red); color: var(--red); }
+
+  #main {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+
+  #main::-webkit-scrollbar { width: 4px; }
+  #main::-webkit-scrollbar-thumb { background: var(--blue-light); border-radius: 4px; }
+
+  /* Upload zone */
+  #upload-zone {
+    border: 3px dashed var(--border); border-radius: 24px;
+    background: var(--white); padding: 32px 20px;
+    text-align: center; cursor: pointer;
+    transition: all 0.25s; position: relative; overflow: hidden; flex-shrink: 0;
+  }
+
+  #upload-zone:hover, #upload-zone.drag-over {
+    border-color: var(--blue); background: var(--blue-light); transform: scale(1.01);
+  }
+
+  #upload-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+
+  .upload-icon { font-size: 48px; margin-bottom: 10px; animation: float 2.5s ease-in-out infinite; display: block; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .upload-title { font-family: 'Comfortaa', sans-serif; font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .upload-sub { font-size: 13px; color: var(--text-soft); font-weight: 600; }
+  .upload-actions { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+
+  .upload-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 18px; border-radius: 20px;
+    font-size: 13px; font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+    border: 2px solid transparent; cursor: pointer; transition: all 0.2s;
+  }
+
+  .upload-btn.primary { background: var(--blue); color: #fff; box-shadow: 0 4px 14px rgba(79,142,247,0.3); }
+  .upload-btn.primary:hover { background: var(--blue-dark); transform: translateY(-1px); }
+
+  /* Image size warning */
+  .size-warning {
+    background: #fff8e1; border: 2px solid #ffd54f;
+    border-radius: 12px; padding: 10px 14px;
+    font-size: 12px; font-weight: 700; color: #b8860b;
+    display: none; margin-top: 8px;
+  }
+
+  /* Image preview */
+  #image-preview-wrap {
+    display: none; border-radius: 20px; overflow: hidden;
+    position: relative; background: var(--white);
+    border: 2px solid var(--border);
+    box-shadow: 0 6px 20px var(--shadow); flex-shrink: 0;
+  }
+
+  #image-preview { width: 100%; max-height: 260px; object-fit: cover; display: block; }
+
+  .preview-overlay { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; }
+
+  .overlay-btn {
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 800;
+    border: none; cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    transition: all 0.2s; backdrop-filter: blur(8px);
+  }
+
+  .overlay-btn.change { background: rgba(255,255,255,0.9); color: var(--text); }
+  .overlay-btn.analyse { background: var(--blue); color: #fff; box-shadow: 0 4px 12px rgba(79,142,247,0.4); }
+  .overlay-btn.analyse:hover { background: var(--blue-dark); transform: scale(1.05); }
+  .overlay-btn.analyse:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Image info bar */
+  .image-info {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+    padding: 6px 12px;
+    font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.85);
+    display: flex; justify-content: space-between;
+  }
+
+  /* Result cards */
+  .result-card {
+    background: var(--white); border-radius: 20px;
+    border: 2px solid var(--border); overflow: hidden;
+    box-shadow: 0 4px 16px var(--shadow);
+    animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1); flex-shrink: 0;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .card-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-bottom: 2px solid var(--border);
+  }
+
+  .card-icon {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+
+  .card-icon.describe { background: var(--blue-light); }
+  .card-icon.ocr { background: var(--green-light); }
+  .card-icon.qa { background: var(--orange-light); }
+
+  .card-title { font-size: 13px; font-weight: 800; color: var(--text-mid); text-transform: uppercase; letter-spacing: 0.05em; }
+  .card-body { padding: 14px 16px; font-size: 14px; line-height: 1.7; color: var(--text); font-weight: 600; }
+  .card-body p { margin-bottom: 6px; }
+  .card-body p:last-child { margin: 0; }
+
+  /* Q&A */
+  #qa-section {
+    background: var(--white); border-radius: 20px;
+    border: 2px solid var(--border); overflow: hidden; flex-shrink: 0;
+  }
+
+  .qa-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-bottom: 2px solid var(--border); background: var(--orange-light);
+  }
+
+  .qa-title { font-size: 13px; font-weight: 800; color: #c05a10; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .qa-messages {
+    max-height: 200px; overflow-y: auto;
+    padding: 12px; display: flex; flex-direction: column; gap: 10px;
+  }
+
+  .qa-bubble {
+    padding: 9px 13px; border-radius: 14px;
+    font-size: 13px; font-weight: 600; line-height: 1.5;
+    max-width: 90%; animation: bubbleIn 0.2s ease;
+  }
+
+  @keyframes bubbleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .qa-bubble.user { background: var(--blue); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .qa-bubble.ai { background: var(--surface); border: 1.5px solid var(--border); color: var(--text); align-self: flex-start; border-bottom-left-radius: 4px; }
+
+  .qa-input-row {
+    display: flex; gap: 8px; padding: 10px 12px; border-top: 2px solid var(--border);
+  }
+
+  #qa-input {
+    flex: 1; background: var(--bg);
+    border: 2px solid var(--border); border-radius: 14px;
+    padding: 8px 12px; color: var(--text);
+    font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 600;
+    outline: none; transition: border-color 0.2s;
+  }
+
+  #qa-input:focus { border-color: var(--orange); }
+  #qa-input:disabled { opacity: 0.5; }
+
+  #qa-send {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--orange), #e8622a);
+    border: none; color: #fff; font-size: 15px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(255,140,66,0.35);
+    transition: all 0.2s; flex-shrink: 0;
+  }
+
+  #qa-send:hover { transform: scale(1.1); }
+  #qa-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Typing */
+  .typing-dots { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
+  .typing-dot { width: 7px; height: 7px; border-radius: 50%; animation: bounce 1.1s infinite; }
+  .typing-dot:nth-child(1) { background: var(--blue); }
+  .typing-dot:nth-child(2) { background: var(--purple); animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { background: var(--green); animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-7px); }
+  }
+
+  /* Loading overlay */
+  #loading-overlay {
+    display: none; position: fixed; inset: 0; z-index: 100;
+    background: rgba(240,244,255,0.85); backdrop-filter: blur(4px);
+    flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  }
+
+  .loading-spinner {
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 4px solid var(--blue-light); border-top-color: var(--blue);
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: 'Comfortaa', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-mid); }
+
+  /* Empty state */
+  #empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; flex: 1; text-align: center; padding: 20px; gap: 8px;
+  }
+
+  .empty-icon { font-size: 52px; margin-bottom: 8px; }
+  .empty-title { font-family: 'Comfortaa', sans-serif; font-size: 20px; font-weight: 700; }
+  .empty-sub { font-size: 13px; color: var(--text-soft); font-weight: 600; max-width: 240px; line-height: 1.6; }
+
+  /* Error */
+  .error-card {
+    background: var(--red-light); border: 2px solid #ffc0c0;
+    border-radius: 14px; padding: 12px 16px;
+    font-size: 13px; color: var(--red); font-weight: 700;
+    animation: popIn 0.2s ease;
+  }
+
+  /* Rate limit warning */
+  .rate-limit-card {
+    background: #fff8e1; border: 2px solid #ffd54f;
+    border-radius: 14px; padding: 12px 16px;
+    font-size: 13px; color: #b8860b; font-weight: 700;
+    animation: popIn 0.2s ease;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">✦</div>
+    <div class="login-title">Welcome to Lumio</div>
+    <div class="login-sub">Enter your password to access<br>the AI Image Analyser</div>
+    <div class="login-input-wrap">
+      <input type="password" id="pw-input" class="login-input"
+        placeholder="Enter password"
+        onkeydown="if(event.key==='Enter') doLogin()"
+        oninput="document.getElementById('login-error').style.display='none';this.classList.remove('error')" />
+      <button class="toggle-pw" onclick="togglePw()" type="button">👁</button>
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">
+      <span>Unlock Lumio</span> 🔓
+    </button>
+    <div class="login-error" id="login-error">❌ Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- ── Main App ── -->
+<div id="app" style="display:none">
+
+  <div id="offline-banner">📡 You're offline — check your connection</div>
+
+  <header>
+    <div class="logo">✦</div>
+    <div class="header-info">
+      <h1>Lumio</h1>
+      <div class="header-sub">✨ See the world differently</div>
+    </div>
+    <div class="header-right">
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="resetAll()">New</button>
+        <button class="mode-tab" onclick="scrollToQA()">Q&A</button>
+      </div>
+      <button class="logout-btn" onclick="doLogout()" title="Lock app">🔒</button>
+    </div>
+  </header>
+
+  <div id="main">
+
+    <div id="upload-zone" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <input type="file" id="file-input" accept="image/*" onchange="onFileChange(event)" />
+      <span class="upload-icon">🖼️</span>
+      <div class="upload-title">Drop an image here</div>
+      <div class="upload-sub">JPG, PNG, WEBP · Max 4MB</div>
+      <div class="upload-actions">
+        <label class="upload-btn primary" for="file-input">📁 Gallery</label>
+        <label class="upload-btn primary" for="camera-input">📷 Camera</label>
+      </div>
+      <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="onFileChange(event)" style="display:none" />
+    </div>
+
+    <div class="size-warning" id="size-warning">⚠️ Image is large and will be compressed before sending.</div>
+
+    <div id="image-preview-wrap">
+      <img id="image-preview" src="" alt="Preview" />
+      <div class="image-info">
+        <span id="image-name">image.jpg</span>
+        <span id="image-size">0 KB</span>
+      </div>
+      <div class="preview-overlay">
+        <button class="overlay-btn change" onclick="resetImage()">🔄 Change</button>
+        <button class="overlay-btn analyse" id="analyse-btn" onclick="analyseImage()">✨ Analyse</button>
+      </div>
+    </div>
+
+    <div id="empty-state">
+      <div class="empty-icon">✨</div>
+      <div class="empty-title">Upload an image</div>
+      <div class="empty-sub">I'll describe it, read any text, and answer your questions!</div>
+    </div>
+
+    <div id="results"></div>
+
+    <div id="qa-section" style="display:none">
+      <div class="qa-header">
+        <div class="card-icon qa">💬</div>
+        <div class="qa-title">Ask about this image</div>
+      </div>
+      <div class="qa-messages" id="qa-messages"></div>
+      <div class="qa-input-row">
+        <input type="text" id="qa-input" placeholder="What's in the background?" onkeydown="handleQAKey(event)" />
+        <button id="qa-send" onclick="askQuestion()">➤</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">Analysing image...</div>
+</div>
+
+<script>
+  // ── State ──
+  let sessionPassword = null;
+  let currentImageBase64 = null;
+  let currentMimeType = null;
+  let currentFileName = '';
+  let qaLoading = false;
+  let lastRequestTime = 0;
+  const MIN_REQUEST_INTERVAL = 3000; // 3s between requests
+
+  // ── Offline Detection ──
+  function updateOnlineStatus() {
+    document.getElementById('offline-banner').style.display = navigator.onLine ? 'none' : 'block';
+  }
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+
+  // ── Login ──
+  function togglePw() {
+    const input = document.getElementById('pw-input');
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+
+  async function doLogin() {
+    const pw = document.getElementById('pw-input').value.trim();
+    if (!pw) return;
+
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span>Checking...</span> ⏳';
+
+    // Verify password against server
+    try {
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw, payload: { model: 'gemini-2.5-flash-lite', body: { contents: [{ parts: [{ text: 'hi' }] }] } } })
+      });
+
+      if (res.status === 401) {
+        showLoginError();
+      } else {
+        // Password is correct (even if API has other error)
+        sessionPassword = pw;
+        sessionStorage.setItem('lumio_session', pw);
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        document.getElementById('app').style.flexDirection = 'column';
+      }
+    } catch (err) {
+      showLoginError('Connection error. Is the server running?');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span>Unlock Lumio</span> 🔓';
+    }
+  }
+
+  function showLoginError(msg) {
+    const el = document.getElementById('login-error');
+    el.textContent = msg || '❌ Incorrect password. Try again.';
+    el.style.display = 'block';
+    document.getElementById('pw-input').classList.add('error');
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+
+  function doLogout() {
+    sessionPassword = null;
+    sessionStorage.removeItem('lumio_session');
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('pw-input').value = '';
+    resetImage();
+  }
+
+  // Check session on load
+  window.addEventListener('load', () => {
+    const saved = sessionStorage.getItem('lumio_session');
+    if (saved) {
+      sessionPassword = saved;
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      document.getElementById('app').style.flexDirection = 'column';
+    }
+    updateOnlineStatus();
+  });
+
+  // ── Image compression ──
+  function compressImage(file, maxSizeMB = 3.5) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+
+          // Scale down if too large
+          const maxDim = 1600;
+          if (width > maxDim || height > maxDim) {
+            const ratio = Math.min(maxDim / width, maxDim / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress quality until under size limit
+          let quality = 0.85;
+          let dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+          while (dataUrl.length * 0.75 / (1024 * 1024) > maxSizeMB && quality > 0.3) {
+            quality -= 0.1;
+            dataUrl = canvas.toDataURL('image/jpeg', quality);
+          }
+
+          resolve({ dataUrl, mimeType: 'image/jpeg' });
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ── Drag & Drop ──
+  function onDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
+  function onDragLeave() { document.getElementById('upload-zone').classList.remove('drag-over'); }
+  function onDrop(e) {
+    e.preventDefault();
+    document.getElementById('upload-zone').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) loadImage(file);
+  }
+
+  function onFileChange(e) {
+    const file = e.target.files[0];
+    if (file) loadImage(file);
+  }
+
+  async function loadImage(file) {
+    const sizeMB = file.size / (1024 * 1024);
+    const sizeWarning = document.getElementById('size-warning');
+
+    showLoading('Loading image...');
+
+    let dataUrl, mimeType;
+
+    if (sizeMB > 1) {
+      sizeWarning.style.display = 'block';
+      const compressed = await compressImage(file);
+      dataUrl = compressed.dataUrl;
+      mimeType = compressed.mimeType;
+    } else {
+      sizeWarning.style.display = 'none';
+      const result = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+      dataUrl = result;
+      mimeType = file.type;
+    }
+
+    hideLoading();
+
+    currentImageBase64 = dataUrl.split(',')[1];
+    currentMimeType = mimeType;
+    currentFileName = file.name;
+
+    document.getElementById('image-preview').src = dataUrl;
+    document.getElementById('image-preview-wrap').style.display = 'block';
+    document.getElementById('upload-zone').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('qa-section').style.display = 'none';
+
+    // Show image info
+    const finalSizeKB = Math.round((currentImageBase64.length * 0.75) / 1024);
+    document.getElementById('image-name').textContent = file.name;
+    document.getElementById('image-size').textContent = finalSizeKB > 1024
+      ? (finalSizeKB / 1024).toFixed(1) + ' MB'
+      : finalSizeKB + ' KB';
+  }
+
+  function resetImage() {
+    currentImageBase64 = null;
+    document.getElementById('image-preview-wrap').style.display = 'none';
+    document.getElementById('upload-zone').style.display = 'block';
+    document.getElementById('empty-state').style.display = 'flex';
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('qa-section').style.display = 'none';
+    document.getElementById('size-warning').style.display = 'none';
+    document.getElementById('file-input').value = '';
+    document.getElementById('camera-input').value = '';
+  }
+
+  function resetAll() { resetImage(); }
+  function scrollToQA() { document.getElementById('qa-section').scrollIntoView({ behavior: 'smooth' }); }
+
+  // ── Rate limit check ──
+  function checkRateLimit() {
+    const now = Date.now();
+    if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
+      const wait = Math.ceil((MIN_REQUEST_INTERVAL - (now - lastRequestTime)) / 1000);
+      showRateWarning(`Please wait ${wait}s before sending another request.`);
+      return false;
+    }
+    lastRequestTime = now;
+    return true;
+  }
+
+  function showRateWarning(msg) {
+    const results = document.getElementById('results');
+    const existing = document.getElementById('rate-warn');
+    if (existing) existing.remove();
+    const div = document.createElement('div');
+    div.className = 'rate-limit-card'; div.id = 'rate-warn';
+    div.textContent = '⏳ ' + msg;
+    results.appendChild(div);
+    setTimeout(() => div.remove(), 3000);
+  }
+
+  // ── Analyse Image ──
+  async function analyseImage() {
+    if (!currentImageBase64) return;
+    if (!navigator.onLine) { showError('You are offline. Please check your connection.'); return; }
+    if (!checkRateLimit()) return;
+
+    showLoading('Analysing image...');
+    document.getElementById('analyse-btn').disabled = true;
+    document.getElementById('results').innerHTML = '';
+
+    try {
+      setLoadingText('Reading image with AI...');
+      const res = await callGeminiLumion(`You are an expert image analyst. Analyse this image and respond ONLY with a valid JSON object in this exact format (no markdown, no backticks):
+{
+  "description": "A rich, detailed description of the image in 3-5 sentences covering what is shown, colors, mood, and context.",
+  "ocr": "All visible text in the image exactly as written. If no text is present, write: No text detected.",
+  "summary": "A one-sentence fun or insightful takeaway about this image."
+}`);
+
+      let parsed;
+      try {
+        const clean = res.replace(/```json|```/g, '').trim();
+        parsed = JSON.parse(clean);
+      } catch {
+        parsed = { description: res, ocr: 'Could not extract separately.', summary: '' };
+      }
+
+      hideLoading();
+      renderResults(parsed);
+      setupQA();
+
+    } catch (err) {
+      hideLoading();
+      document.getElementById('analyse-btn').disabled = false;
+      showError(err.message);
+    }
+  }
+
+  function renderResults({ description, ocr, summary }) {
+    const results = document.getElementById('results');
+    results.innerHTML = '';
+    results.appendChild(createCard('✦', 'describe', 'Image Description', formatText(description)));
+    results.appendChild(createCard('📝', 'ocr', 'Text in Image (OCR)', formatText(ocr)));
+    if (summary) results.appendChild(createCard('💡', 'qa', 'Key Insight', formatText(summary)));
+  }
+
+  function createCard(icon, type, title, html) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-icon ${type}">${icon}</div>
+        <div class="card-title">${title}</div>
+      </div>
+      <div class="card-body">${html}</div>`;
+    return card;
+  }
+
+  function formatText(text) {
+    return text.split('\n').map(l => `<p>${l || '&nbsp;'}</p>`).join('');
+  }
+
+  function setupQA() {
+    document.getElementById('qa-section').style.display = 'block';
+    document.getElementById('qa-input').disabled = false;
+    document.getElementById('qa-send').disabled = false;
+    document.getElementById('qa-messages').innerHTML = '';
+    addQABubble('ai', '🖼️ Image analysed! Ask me anything about it.');
+    setTimeout(() => document.getElementById('qa-section').scrollIntoView({ behavior: 'smooth' }), 300);
+  }
+
+  // ── Q&A ──
+  function handleQAKey(e) { if (e.key === 'Enter') { e.preventDefault(); askQuestion(); } }
+
+  async function askQuestion() {
+    if (qaLoading || !currentImageBase64) return;
+    if (!navigator.onLine) { addQABubble('ai', '📡 You\'re offline. Please check your connection.'); return; }
+    if (!checkRateLimit()) return;
+
+    const input = document.getElementById('qa-input');
+    const question = input.value.trim();
+    if (!question) return;
+
+    input.value = '';
+    addQABubble('user', question);
+    qaLoading = true;
+    document.getElementById('qa-send').disabled = true;
+    const typingId = addTypingBubble();
+
+    try {
+      const answer = await callGeminiLumion(`The user is asking a question about this image. Answer helpfully and concisely.\n\nQuestion: ${question}`);
+      removeTypingBubble(typingId);
+      addQABubble('ai', answer);
+    } catch (err) {
+      removeTypingBubble(typingId);
+      addQABubble('ai', '😬 Error: ' + err.message);
+    } finally {
+      qaLoading = false;
+      document.getElementById('qa-send').disabled = false;
+    }
+  }
+
+  function addQABubble(role, text) {
+    const msgs = document.getElementById('qa-messages');
+    const div = document.createElement('div');
+    div.className = `qa-bubble ${role}`;
+    div.textContent = text;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+
+  function addTypingBubble() {
+    const msgs = document.getElementById('qa-messages');
+    const id = 'typing-' + Date.now();
+    const div = document.createElement('div');
+    div.className = 'qa-bubble ai'; div.id = id;
+    div.innerHTML = `<div class="typing-dots">
+      <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+    </div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return id;
+  }
+
+  function removeTypingBubble(id) { const el = document.getElementById(id); if (el) el.remove(); }
+
+  // ── Gemini API via proxy ──
+  async function callGeminiLumion(prompt) {
+    const res = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        password: sessionPassword,
+        payload: {
+          model: 'gemini-2.5-flash-lite',
+          body: {
+            contents: [{
+              parts: [
+                { inline_data: { mime_type: currentMimeType, data: currentImageBase64 } },
+                { text: prompt }
+              ]
+            }]
+          }
+        }
+      })
+    });
+
+    const data = await res.json();
+    if (res.status === 401) { doLogout(); throw new Error('Session expired. Please log in again.'); }
+    if (!res.ok) throw new Error(data.error?.message || 'API error ' + res.status);
+    return data.candidates[0].content.parts[0].text;
+  }
+
+  // ── Helpers ──
+  function showLoading(text) {
+    document.getElementById('loading-text').textContent = text;
+    document.getElementById('loading-overlay').style.display = 'flex';
+  }
+
+  function setLoadingText(text) { document.getElementById('loading-text').textContent = text; }
+
+  function hideLoading() {
+    document.getElementById('loading-overlay').style.display = 'none';
+    document.getElementById('analyse-btn').disabled = false;
+  }
+
+  function showError(msg) {
+    const results = document.getElementById('results');
+    const div = document.createElement('div');
+    div.className = 'error-card';
+    div.textContent = '😬 ' + msg;
+    results.appendChild(div);
+  }
+</script>
+</body>
+</html>
